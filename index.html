@@ -8,7 +8,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/react-calendar@4.2.1/dist/Calendar.css">
   <style>
-    /* Custom styles for React Calendar */
     .react-calendar {
       width: 100%;
       border: none;
@@ -18,7 +17,6 @@
       padding: 1.25rem;
       box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
     }
-    
     .react-calendar__navigation button {
       min-width: 44px;
       background: none;
@@ -28,7 +26,6 @@
       border-radius: 0.75rem;
       transition: all 0.2s;
     }
-    
     .react-calendar__tile {
       padding: 0.75rem 0.5rem !important;
       background: none;
@@ -46,12 +43,10 @@
       transition: all 0.2s;
       position: relative;
     }
-    
     .react-calendar__tile--active {
       background: #4f46e5 !important;
       color: white !important;
     }
-
     .dot-indicator {
       height: 4px;
       width: 4px;
@@ -60,8 +55,6 @@
       margin-top: 4px;
       flex-shrink: 0;
     }
-
-    /* Improved Flashcard Flip Animation */
     .perspective-1000 {
       perspective: 1000px;
       -webkit-perspective: 1000px;
@@ -73,13 +66,11 @@
     .backface-hidden {
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
-      /* Crucial fix for mirrored text: Ensure the back of the element is truly hidden */
     }
     .rotate-y-180 {
       transform: rotateY(180deg);
       -webkit-transform: rotateY(180deg);
     }
-
     ::-webkit-scrollbar {
       display: none;
     }
@@ -102,16 +93,15 @@
     "react-router-dom": "https://esm.sh/react-router-dom@6.26.2?external=react,react-dom",
     "lucide-react": "https://esm.sh/lucide-react@0.446.0?external=react",
     "react-calendar": "https://esm.sh/react-calendar@4.2.1?external=react,react-dom",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
 }
 </script>
 </head>
 <body class="bg-slate-50 text-slate-900">
   <div id="root"></div>
-  <!-- Standard entry point for Vercel/Vite -->
   <script type="module" src="/index.tsx"></script>
 </body>
 </html>

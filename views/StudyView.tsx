@@ -1,19 +1,19 @@
 
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Header } from '../components/Layout.tsx';
-import Flashcard from '../components/Flashcard.tsx';
+import { Header } from '../components/Layout';
+import Flashcard from '../components/Flashcard';
 import { ChevronLeft, ChevronRight, Star, Home } from 'lucide-react';
-import { useApp } from '../App.tsx';
-import { Sentence } from '../types.ts';
+import { useApp } from '../App';
+import { Sentence } from '../types';
 
 const StudyView: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { updateBookmarkOptimistically } = useApp();
   
-  const studyList: Sentence[] = location.state?.sentences || [];
-  const title: string = location.state?.title || '스터디';
+  const studyList: Sentence[] = (location.state as any)?.sentences || [];
+  const title: string = (location.state as any)?.title || '스터디';
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -75,7 +75,6 @@ const StudyView: React.FC = () => {
             <ChevronLeft className="w-8 h-8" />
           </button>
 
-          {/* User requested to change the middle flip button to a bookmark button */}
           <button
             onClick={toggleBookmark}
             className={`w-16 h-16 rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all border-2 ${

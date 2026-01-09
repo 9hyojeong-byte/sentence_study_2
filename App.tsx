@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
-import { Sentence, AppState } from './types.ts';
-import { apiService } from './services/apiService.ts';
+import { AppState } from './types';
+import { apiService } from './services/apiService';
 
-import MainView from './views/MainView.tsx';
-import ListView from './views/ListView.tsx';
-import InputView from './views/InputView.tsx';
-import StudyView from './views/StudyView.tsx';
+import MainView from './views/MainView';
+import ListView from './views/ListView';
+import InputView from './views/InputView';
+import StudyView from './views/StudyView';
 
 interface AppContextType {
   state: AppState;

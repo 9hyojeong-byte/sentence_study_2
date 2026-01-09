@@ -3,33 +3,29 @@ import React, { useState } from 'react';
 import Calendar from 'react-calendar';
 import { Plus, Shuffle, CalendarDays } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../App.tsx';
-import { Header, LoadingOverlay } from '../components/Layout.tsx';
-import StatsDashboard from '../components/StatsDashboard.tsx';
+import { useApp } from '../App';
+import { Header, LoadingOverlay } from '../components/Layout';
+import StatsDashboard from '../components/StatsDashboard';
 
 const MainView: React.FC = () => {
   const { state } = useApp();
   const navigate = useNavigate();
   
-  // 캘린더 상태 관리
   const [value, setValue] = useState(new Date());
   const [activeStartDate, setActiveStartDate] = useState<Date | undefined>(undefined);
 
-  // 날짜 비교를 위한 유틸리티 함수 (YYYY-MM-DD 포맷 반환)
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-CA'); // en-CA locale은 항상 YYYY-MM-DD 형식을 반환합니다.
+    return date.toLocaleDateString('en-CA');
   };
 
   const getDaySentences = (date: Date) => {
     const targetDateStr = formatDate(date);
     return state.sentences.filter(s => {
-      // 서버 데이터가 ISO 전체 문자열일 경우를 대비해 앞의 10자리만 추출
       const sDateStr = s.date && typeof s.date === 'string' ? s.date.substring(0, 10) : '';
       return sDateStr === targetDateStr;
     });
   };
 
-  // 날짜 아래에 도트 표시
   const tileContent = ({ date, view }: { date: Date, view: string }) => {
     if (view === 'month') {
       const daySentences = getDaySentences(date);
@@ -40,8 +36,7 @@ const MainView: React.FC = () => {
     return null;
   };
 
-  // "일" 제거하고 숫자만 표시
-  const formatDay = (locale: string | undefined, date: Date) => {
+  const formatDay = (_locale: string | undefined, date: Date) => {
     return date.getDate().toString();
   };
 
@@ -51,7 +46,6 @@ const MainView: React.FC = () => {
     navigate(`/list/date/${dateStr}`);
   };
 
-  // 오늘 날짜로 이동하는 함수
   const goToToday = () => {
     const today = new Date();
     setValue(today);

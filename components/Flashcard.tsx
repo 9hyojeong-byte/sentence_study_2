@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ExternalLink, HelpCircle } from 'lucide-react';
-import { Sentence } from '../types.ts';
+import { Sentence } from '../types';
 
 interface FlashcardProps {
   sentence: Sentence;
@@ -15,7 +15,6 @@ const Flashcard: React.FC<FlashcardProps> = ({ sentence, isFlipped, onFlip }) =>
     <div className="w-full aspect-[3/4] perspective-1000 cursor-pointer" onClick={onFlip}>
       <div className={`relative w-full h-full duration-500 preserve-3d transition-transform ${isFlipped ? 'rotate-y-180' : ''}`}>
         
-        {/* Front Side: Meaning (Korean) & Hint */}
         <div className="absolute inset-0 backface-hidden bg-white border-2 border-indigo-50 rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 text-center overflow-hidden">
           <div className="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-3 py-1 rounded-full mb-6 tracking-widest uppercase">
             MEANING
@@ -40,7 +39,6 @@ const Flashcard: React.FC<FlashcardProps> = ({ sentence, isFlipped, onFlip }) =>
           </div>
         </div>
 
-        {/* Back Side: Sentence (English) */}
         <div className="absolute inset-0 backface-hidden rotate-y-180 bg-indigo-600 border-2 border-indigo-700 rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 text-center text-white">
           <div className="bg-white/10 text-white/80 text-[10px] font-bold px-3 py-1 rounded-full mb-6 tracking-widest uppercase">
             ENGLISH
