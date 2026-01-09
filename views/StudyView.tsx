@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Layout.tsx';
 import Flashcard from '../components/Flashcard.tsx';
-import { ChevronLeft, ChevronRight, RotateCcw, Home } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star, Home } from 'lucide-react';
 import { useApp } from '../App.tsx';
 import { Sentence } from '../types.ts';
 
@@ -37,7 +37,6 @@ const StudyView: React.FC = () => {
   const handleNext = () => {
     if (currentIndex < studyList.length - 1) {
       setIsFlipped(false);
-      // 부드러운 전환을 위해 약간의 지연 후 인덱스 변경
       setTimeout(() => setCurrentIndex(prev => prev + 1), 150);
     }
   };
@@ -51,6 +50,10 @@ const StudyView: React.FC = () => {
 
   const handleFlip = () => setIsFlipped(!isFlipped);
 
+  const toggleBookmark = () => {
+    updateBookmarkOptimistically(currentSentence.id);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Header title={`${title} (${currentIndex + 1}/${studyList.length})`} />
@@ -60,7 +63,7 @@ const StudyView: React.FC = () => {
           sentence={currentSentence} 
           isFlipped={isFlipped}
           onFlip={handleFlip}
-          onToggleBookmark={() => updateBookmarkOptimistically(currentSentence.id)}
+          onToggleBookmark={toggleBookmark}
         />
 
         <div className="mt-10 flex items-center justify-between w-full max-w-[280px]">
@@ -72,11 +75,16 @@ const StudyView: React.FC = () => {
             <ChevronLeft className="w-8 h-8" />
           </button>
 
+          {/* User requested to change the middle flip button to a bookmark button */}
           <button
-            onClick={handleFlip}
-            className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full shadow-inner flex items-center justify-center active:scale-90 transition-transform"
+            onClick={toggleBookmark}
+            className={`w-16 h-16 rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all border-2 ${
+              currentSentence.bookmark 
+                ? 'bg-yellow-50 text-yellow-500 border-yellow-200' 
+                : 'bg-white text-slate-300 border-slate-100'
+            }`}
           >
-            <RotateCcw className={`w-8 h-8 transition-transform duration-500 ${isFlipped ? 'rotate-180' : ''}`} />
+            <Star className={`w-8 h-8 ${currentSentence.bookmark ? 'fill-current' : ''}`} />
           </button>
 
           <button

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Star, ExternalLink, HelpCircle } from 'lucide-react';
+import { ExternalLink, HelpCircle } from 'lucide-react';
 import { Sentence } from '../types.ts';
 
 interface FlashcardProps {
@@ -10,17 +10,13 @@ interface FlashcardProps {
   onToggleBookmark: () => void;
 }
 
-const Flashcard: React.FC<FlashcardProps> = ({ sentence, isFlipped, onFlip, onToggleBookmark }) => {
+const Flashcard: React.FC<FlashcardProps> = ({ sentence, isFlipped, onFlip }) => {
   return (
     <div className="w-full aspect-[3/4] perspective-1000 cursor-pointer" onClick={onFlip}>
       <div className={`relative w-full h-full duration-500 preserve-3d transition-transform ${isFlipped ? 'rotate-y-180' : ''}`}>
         
         {/* Front Side: Meaning (Korean) & Hint */}
         <div className="absolute inset-0 backface-hidden bg-white border-2 border-indigo-50 rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 text-center overflow-hidden">
-          <div className="absolute top-5 right-5 z-10" onClick={(e) => { e.stopPropagation(); onToggleBookmark(); }}>
-            <Star className={`w-8 h-8 transition-all ${sentence.bookmark ? 'fill-yellow-400 text-yellow-400 scale-110' : 'text-slate-200 hover:text-slate-300'}`} />
-          </div>
-          
           <div className="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-3 py-1 rounded-full mb-6 tracking-widest uppercase">
             MEANING
           </div>
@@ -46,10 +42,6 @@ const Flashcard: React.FC<FlashcardProps> = ({ sentence, isFlipped, onFlip, onTo
 
         {/* Back Side: Sentence (English) */}
         <div className="absolute inset-0 backface-hidden rotate-y-180 bg-indigo-600 border-2 border-indigo-700 rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 text-center text-white">
-          <div className="absolute top-5 right-5 z-10" onClick={(e) => { e.stopPropagation(); onToggleBookmark(); }}>
-            <Star className={`w-8 h-8 ${sentence.bookmark ? 'fill-white text-white' : 'text-indigo-400 hover:text-indigo-300'}`} />
-          </div>
-
           <div className="bg-white/10 text-white/80 text-[10px] font-bold px-3 py-1 rounded-full mb-6 tracking-widest uppercase">
             ENGLISH
           </div>
