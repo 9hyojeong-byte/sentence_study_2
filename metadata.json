@@ -1,0 +1,5 @@
+{
+  "name": "English Sentence Flashcards",
+  "description": "A comprehensive English learning application featuring a calendar view, statistics dashboard, and interactive flashcards with Google Sheets as a backend.",
+  "requestFramePermissions": []
+}
