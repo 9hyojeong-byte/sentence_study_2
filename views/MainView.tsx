@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Calendar from 'react-calendar';
-import { Plus, Shuffle, CalendarDays } from 'lucide-react';
+import { Plus, Shuffle, CalendarDays, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { Header, LoadingOverlay } from '../components/Layout';
@@ -11,12 +11,10 @@ const MainView: React.FC = () => {
   const { state, setLastViewedDate } = useApp();
   const navigate = useNavigate();
   
-  // 전역 상태에서 마지막으로 보고 있던 날짜를 가져옵니다.
   const [value, setValue] = useState(state.lastViewedDate);
   const [activeStartDate, setActiveStartDate] = useState<Date | undefined>(state.lastViewedDate);
 
   const formatDate = (date: Date) => {
-    // 한국 시간대 기준 YYYY-MM-DD 보장
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -47,7 +45,7 @@ const MainView: React.FC = () => {
 
   const handleDateClick = (date: Date) => {
     setValue(date);
-    setLastViewedDate(date); // 선택한 날짜를 마지막 확인 날짜로 저장
+    setLastViewedDate(date);
     const dateStr = formatDate(date);
     navigate(`/list/date/${dateStr}`);
   };
@@ -56,7 +54,7 @@ const MainView: React.FC = () => {
     const today = new Date();
     setValue(today);
     setActiveStartDate(today);
-    setLastViewedDate(today); // 오늘로 상태 업데이트
+    setLastViewedDate(today);
   };
 
   const handleRandomStudy = () => {
@@ -66,11 +64,10 @@ const MainView: React.FC = () => {
     navigate('/study', { state: { sentences: selected, title: '랜덤 10개 학습' } });
   };
 
-  // 사용자가 달력에서 월/년을 변경할 때 호출됨
   const handleActiveStartDateChange = ({ activeStartDate: nextDate }: { activeStartDate: Date | null }) => {
     if (nextDate) {
       setActiveStartDate(nextDate);
-      setLastViewedDate(nextDate); // 표시 중인 월을 전역 상태에 저장
+      setLastViewedDate(nextDate);
     }
   };
 
@@ -80,29 +77,31 @@ const MainView: React.FC = () => {
       
       {state.loading && <LoadingOverlay />}
 
-      {/* 학습 시작 버튼을 상단으로 이동 */}
-      <div className="px-5 mt-8 mb-4">
+      {/* 대형 학습 시작 버튼 (상단 배치) */}
+      <div className="px-5 mt-6 mb-2">
         <button
           onClick={handleRandomStudy}
           disabled={state.sentences.length === 0}
-          className="w-full bg-indigo-600 text-white py-6 rounded-[2rem] flex flex-col items-center justify-center gap-2 font-extrabold text-lg shadow-2xl shadow-indigo-200 hover:bg-indigo-700 active:scale-[0.97] transition-all disabled:opacity-50 disabled:shadow-none border-b-4 border-indigo-800"
+          className="w-full bg-indigo-600 text-white py-7 rounded-[2.5rem] flex flex-col items-center justify-center gap-2 font-extrabold text-xl shadow-2xl shadow-indigo-200 hover:bg-indigo-700 active:scale-[0.96] transition-all disabled:opacity-50 disabled:shadow-none border-b-[6px] border-indigo-800 relative overflow-hidden group"
         >
-          <div className="flex items-center gap-3">
-            <Shuffle className="w-6 h-6" />
-            <span>랜덤 10개 문장 학습하기</span>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-white/10 to-transparent pointer-events-none"></div>
+          <div className="flex items-center gap-3 z-10">
+            <Shuffle className="w-7 h-7 animate-pulse" />
+            <span>랜덤 10개 학습하기</span>
+            <Sparkles className="w-5 h-5 text-indigo-200" />
           </div>
         </button>
       </div>
 
       <div className="px-5 mt-8 relative">
-        <div className="flex justify-between items-center mb-2 px-1">
-          <h2 className="text-sm font-bold text-slate-400 flex items-center gap-1.5">
-            <CalendarDays className="w-4 h-4" />
-            Learning Calendar
+        <div className="flex justify-between items-center mb-3 px-1">
+          <h2 className="text-sm font-extrabold text-slate-400 flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-indigo-400" />
+            학습 달력
           </h2>
           <button
             onClick={goToToday}
-            className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors active:scale-95"
+            className="text-[11px] font-black text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full hover:bg-indigo-100 transition-colors active:scale-95 uppercase tracking-wider"
           >
             Today
           </button>
@@ -127,7 +126,7 @@ const MainView: React.FC = () => {
 
       <button
         onClick={() => navigate('/input')}
-        className="fixed bottom-8 right-6 w-16 h-16 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-indigo-700 transition-all active:scale-90 z-40"
+        className="fixed bottom-8 right-6 w-16 h-16 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-indigo-700 transition-all active:scale-90 z-40 border-4 border-white"
       >
         <Plus className="w-9 h-9" />
       </button>
