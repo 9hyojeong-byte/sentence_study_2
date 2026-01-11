@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useApp } from '../App.tsx';
-import { Header, EmptyState } from '../components/Layout.tsx';
+import { useApp } from '../App';
+import { Header, EmptyState } from '../components/Layout';
 import { Edit2, PlayCircle, Star } from 'lucide-react';
 
 const ListView: React.FC = () => {
@@ -14,7 +14,6 @@ const ListView: React.FC = () => {
     if (type === 'all') return true;
     if (type === 'date') return s.date === value;
     if (type === 'bookmark') return s.bookmark === true;
-    if (type === 'streak') return true;
     return true;
   });
 

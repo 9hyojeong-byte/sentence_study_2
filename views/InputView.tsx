@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useApp } from '../App.tsx';
-import { Header, LoadingOverlay } from '../components/Layout.tsx';
-import { apiService } from '../services/apiService.ts';
+import { useApp } from '../App';
+import { Header, LoadingOverlay } from '../components/Layout';
+import { apiService } from '../services/apiService';
 import { Trash2, Save } from 'lucide-react';
-import { Sentence } from '../types.ts';
+import { Sentence } from '../types';
 
 const InputView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,7 +13,6 @@ const InputView: React.FC = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 현지 시간 기준 YYYY-MM-DD 구하기
   const getTodayLocal = () => {
     return new Date().toLocaleDateString('en-CA');
   };
@@ -31,7 +30,6 @@ const InputView: React.FC = () => {
     if (id) {
       const existing = state.sentences.find(s => s.id === id);
       if (existing) {
-        // 날짜가 ISO string일 경우 처리
         const formattedDate = existing.date && typeof existing.date === 'string' 
           ? existing.date.substring(0, 10) 
           : existing.date;
