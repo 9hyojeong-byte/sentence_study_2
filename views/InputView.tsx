@@ -14,7 +14,11 @@ const InputView: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getTodayLocal = () => {
-    return new Date().toLocaleDateString('en-CA');
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const [formData, setFormData] = useState<Partial<Sentence>>({

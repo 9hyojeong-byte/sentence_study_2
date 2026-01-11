@@ -16,4 +16,5 @@ export interface AppState {
   sentences: Sentence[];
   loading: boolean;
   error: string | null;
+  lastViewedDate: Date; // 마지막으로 확인한 달력의 날짜/위치
 }

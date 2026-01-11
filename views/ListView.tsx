@@ -3,17 +3,25 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { Header, EmptyState } from '../components/Layout';
-import { Edit2, PlayCircle, Star } from 'lucide-react';
+import { Edit2, PlayCircle, Star, Calendar, Play } from 'lucide-react';
+import { Sentence } from '../types';
 
 const ListView: React.FC = () => {
   const { type, value } = useParams<{ type: string; value: string }>();
   const { state, updateBookmarkOptimistically } = useApp();
   const navigate = useNavigate();
 
+  // 날짜 문자열을 YYYY-MM-DD 형식으로 안전하게 변환하는 함수
+  const formatDateString = (dateStr: string) => {
+    if (!dateStr) return '날짜 없음';
+    return dateStr.substring(0, 10);
+  };
+
   const filteredSentences = state.sentences.filter(s => {
     if (type === 'all') return true;
-    if (type === 'date') return s.date === value;
+    if (type === 'date') return formatDateString(s.date) === value;
     if (type === 'bookmark') return s.bookmark === true;
+    if (type === 'streak') return true; 
     return true;
   });
 
@@ -24,59 +32,109 @@ const ListView: React.FC = () => {
     return '전체 문장 목록';
   };
 
-  const handleStartStudy = () => {
-    if (filteredSentences.length === 0) return;
-    const shuffled = [...filteredSentences].sort(() => 0.5 - Math.random());
-    navigate('/study', { state: { sentences: shuffled, title: getTitle() } });
+  const handleStartStudy = (targetSentences: Sentence[] = filteredSentences, customTitle?: string) => {
+    if (targetSentences.length === 0) return;
+    const shuffled = [...targetSentences].sort(() => 0.5 - Math.random());
+    navigate('/study', { state: { sentences: shuffled, title: customTitle || getTitle() } });
   };
+
+  // 그룹화 및 정렬
+  const groupedByDate = filteredSentences.reduce((acc, sentence) => {
+    const date = formatDateString(sentence.date);
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(sentence);
+    return acc;
+  }, {} as Record<string, Sentence[]>);
+
+  // 날짜 내림차순 정렬 (최신순)
+  const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
+
+  const renderSentenceCard = (s: Sentence) => (
+    <div key={s.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-start gap-4 hover:border-blue-100 transition-colors">
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded tracking-tight">
+            {formatDateString(s.date)}
+          </span>
+          {s.bookmark && <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />}
+        </div>
+        <p className="text-gray-900 font-semibold mb-1 leading-tight">{s.sentence}</p>
+        <p className="text-gray-500 text-sm">{s.meaning}</p>
+      </div>
+      <div className="flex flex-col gap-2">
+        <button 
+          onClick={() => navigate(`/edit/${s.id}`)}
+          className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+        >
+          <Edit2 className="w-4 h-4" />
+        </button>
+        <button 
+          onClick={() => updateBookmarkOptimistically(s.id)}
+          className={`p-2 rounded-full transition-colors ${s.bookmark ? 'text-yellow-500 bg-yellow-50' : 'text-gray-300 bg-gray-50'}`}
+        >
+          <Star className="w-4 h-4 fill-current" />
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="pb-10 min-h-screen">
       <Header title={getTitle()} />
       
-      <div className="px-4 pt-4 sticky top-[56px] bg-white z-10 pb-4 shadow-sm border-b border-gray-50">
+      <div className="px-4 pt-4 sticky top-[56px] bg-white/90 backdrop-blur-md z-20 pb-4 shadow-sm border-b border-gray-50">
         <button
-          onClick={handleStartStudy}
+          onClick={() => handleStartStudy()}
           disabled={filteredSentences.length === 0}
-          className="w-full bg-blue-600 text-white py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-md disabled:opacity-50 active:scale-95 transition-transform"
+          className="w-full bg-blue-600 text-white py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-blue-100 disabled:opacity-50 active:scale-95 transition-all"
         >
           <PlayCircle className="w-5 h-5" />
-          학습 시작하기
+          전체 리스트 학습하기
         </button>
       </div>
 
-      <div className="px-4 mt-6 space-y-4">
+      <div className="px-4 mt-6">
         {filteredSentences.length === 0 ? (
           <EmptyState />
         ) : (
-          filteredSentences.map(s => (
-            <div key={s.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-start gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded uppercase tracking-tighter">
-                    {s.date}
-                  </span>
-                  {s.bookmark && <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />}
+          type === 'streak' || type === 'all' ? (
+            <div className="space-y-10">
+              {sortedDates.map(date => (
+                <div key={date} className="space-y-4">
+                  <div 
+                    className="flex items-center gap-3 px-1 group cursor-pointer"
+                    onClick={() => handleStartStudy(groupedByDate[date], `${date} 학습`)}
+                  >
+                    <div className="bg-slate-800 p-1.5 rounded-lg shadow-sm group-hover:bg-blue-600 transition-colors">
+                      <Calendar className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <div className="flex flex-col">
+                      <h3 className="text-base font-black text-slate-800 tracking-tight leading-none mb-1 group-hover:text-blue-600 transition-colors">{date}</h3>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {groupedByDate[date].length} 문장
+                      </span>
+                    </div>
+                    <div className="h-[1px] flex-1 bg-gradient-to-r from-slate-200 to-transparent"></div>
+                    <button
+                      className="flex items-center gap-1 bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-blue-600 hover:text-white transition-all active:scale-95"
+                    >
+                      <Play className="w-3 h-3 fill-current" />
+                      학습
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {groupedByDate[date].map(s => renderSentenceCard(s))}
+                  </div>
                 </div>
-                <p className="text-gray-900 font-semibold mb-1 leading-tight">{s.sentence}</p>
-                <p className="text-gray-500 text-sm">{s.meaning}</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <button 
-                  onClick={() => navigate(`/edit/${s.id}`)}
-                  className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => updateBookmarkOptimistically(s.id)}
-                  className={`p-2 rounded-full transition-colors ${s.bookmark ? 'text-yellow-500 bg-yellow-50' : 'text-gray-300 bg-gray-50'}`}
-                >
-                  <Star className="w-4 h-4 fill-current" />
-                </button>
-              </div>
+              ))}
             </div>
-          ))
+          ) : (
+            <div className="space-y-3">
+              {filteredSentences.map(s => renderSentenceCard(s))}
+            </div>
+          )
         )}
       </div>
     </div>
