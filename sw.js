@@ -1,13 +1,14 @@
 
-const CACHE_NAME = 'study-buddy-v2';
+const CACHE_NAME = 'study-buddy-v3';
+// './'와 'index.html'을 모두 캐싱하여 어떤 경로로 진입해도 대응 가능하게 합니다.
 const ASSETS_TO_CACHE = [
+  './',
   'index.html',
   'manifest.json',
   'https://cdn.tailwindcss.com',
   'https://cdn.jsdelivr.net/npm/react-calendar@4.2.1/dist/Calendar.css'
 ];
 
-// 설치 시 에셋 캐싱
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -17,7 +18,6 @@ self.addEventListener('install', event => {
   self.skipWaiting();
 });
 
-// 활성화 시 오래된 캐시 삭제
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -33,19 +33,18 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// 페치 이벤트: 네트워크 우선 시도 후 캐시 사용 (Navigation Fallback 포함)
 self.addEventListener('fetch', event => {
-  // 탐색 요청(페이지 이동)인 경우 index.html 반환
+  // 탐색(Navigation) 요청 처리: 오프라인이거나 경로를 못 찾을 때 index.html 반환
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => {
-        return caches.match('index.html');
+        return caches.match('index.html') || caches.match('./');
       })
     );
     return;
   }
 
-  // 일반 리소스 요청
+  // 나머지 리소스 요청
   event.respondWith(
     caches.match(event.request).then(response => {
       return response || fetch(event.request);
