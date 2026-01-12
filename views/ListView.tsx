@@ -41,6 +41,22 @@ const ListView: React.FC = () => {
     navigate('/study', { state: { sentences: shuffled, title: customTitle || getTitle() } });
   };
 
+  const handleCardClick = (clickedSentence: Sentence) => {
+    // 현재 필터링된 전체 리스트에서 클릭된 문장을 제외한 나머지를 추출
+    const others = filteredSentences.filter(s => s.id !== clickedSentence.id);
+    // 나머지 문장들을 랜덤하게 섞음
+    const shuffledOthers = [...others].sort(() => 0.5 - Math.random());
+    // 클릭된 문장을 맨 앞에 두고 학습 리스트 구성
+    const orderedList = [clickedSentence, ...shuffledOthers];
+    
+    navigate('/study', { 
+      state: { 
+        sentences: orderedList, 
+        title: getTitle() 
+      } 
+    });
+  };
+
   // 그룹화 및 정렬
   const groupedByDate = filteredSentences.reduce((acc, sentence) => {
     const date = formatDateString(sentence.date);
@@ -55,7 +71,11 @@ const ListView: React.FC = () => {
   const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
 
   const renderSentenceCard = (s: Sentence) => (
-    <div key={s.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-start gap-4 hover:border-blue-100 transition-colors">
+    <div 
+      key={s.id} 
+      onClick={() => handleCardClick(s)}
+      className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-start gap-4 hover:border-blue-100 transition-colors cursor-pointer group/card"
+    >
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded tracking-tight">
@@ -63,10 +83,10 @@ const ListView: React.FC = () => {
           </span>
           {s.bookmark && <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />}
         </div>
-        <p className="text-gray-900 font-semibold mb-1 leading-tight">{s.sentence}</p>
+        <p className="text-gray-900 font-semibold mb-1 leading-tight group-hover/card:text-blue-600 transition-colors">{s.sentence}</p>
         <p className="text-gray-500 text-sm">{s.meaning}</p>
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2" onClick={e => e.stopPropagation()}>
         <button 
           onClick={() => navigate(`/edit/${s.id}`)}
           className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
