@@ -5,7 +5,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { useApp } from '../App';
 import { Header, LoadingOverlay } from '../components/Layout';
 import { apiService } from '../services/apiService';
-import { Trash2, Save, Sparkles } from 'lucide-react';
+import { Trash2, Save, Sparkles, Lock, X, AlertTriangle } from 'lucide-react';
 import { Sentence } from '../types';
 // Import Gemini API
 import { GoogleGenAI } from "@google/genai";
@@ -18,6 +18,11 @@ const InputView: React.FC = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  
+  // 비밀번호 관련 상태
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [pendingAction, setPendingAction] = useState<'save' | 'delete' | null>(null);
 
   const getTodayLocal = () => {
     const now = new Date();
@@ -48,7 +53,6 @@ const InputView: React.FC = () => {
     }
   }, [id, state.sentences]);
 
-  // Fix: Add Gemini AI recommendation feature
   const handleAIGenerate = async () => {
     setIsGeneratingAI(true);
     try {
@@ -79,38 +83,54 @@ const InputView: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // 폼 제출(저장) 버튼 클릭 시
+  const handleSubmitClick = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.sentence || !formData.meaning) {
       alert("문장과 의미를 입력해주세요.");
       return;
     }
-
-    setIsSubmitting(true);
-    try {
-      await apiService.upsertSentence(formData);
-      await refreshData();
-      navigate(-1);
-    } catch (err) {
-      alert("저장에 실패했습니다.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    setPendingAction('save');
+    setPasswordInput('');
+    setShowPasswordModal(true);
   };
 
-  const handleDelete = async () => {
+  // 삭제 버튼 클릭 시
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     if (!id) return;
-    if (!window.confirm("정말 삭제하시겠습니까?")) return;
+    setPendingAction('delete');
+    setPasswordInput('');
+    setShowPasswordModal(true);
+  };
 
+  // 실제 동작 실행 (비밀번호 확인 후 실행)
+  const handlePasswordConfirm = async () => {
+    if (passwordInput !== '1129') {
+      alert("비밀번호가 틀렸습니다.");
+      setPasswordInput('');
+      return;
+    }
+
+    setShowPasswordModal(false);
     setIsSubmitting(true);
+    
     try {
-      await apiService.deleteSentence(id);
-      await refreshData();
-      navigate('/');
+      if (pendingAction === 'save') {
+        await apiService.upsertSentence(formData);
+        await refreshData();
+        navigate(-1);
+      } else if (pendingAction === 'delete' && id) {
+        await apiService.deleteSentence(id);
+        await refreshData();
+        navigate('/');
+      }
     } catch (err) {
-      alert("삭제에 실패했습니다.");
+      console.error("Action Error:", err);
+      alert(pendingAction === 'save' ? "저장에 실패했습니다." : "삭제에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
+      setPendingAction(null);
     }
   };
 
@@ -120,7 +140,7 @@ const InputView: React.FC = () => {
       
       {(isSubmitting || isGeneratingAI) && <LoadingOverlay />}
 
-      <form onSubmit={handleSubmit} className="px-6 py-8 space-y-6">
+      <form onSubmit={handleSubmitClick} className="px-6 py-8 space-y-6">
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <label className="text-sm font-bold text-gray-700">영어 문장</label>
@@ -192,7 +212,7 @@ const InputView: React.FC = () => {
           {id && (
             <button
               type="button"
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 py-4 rounded-2xl font-bold hover:bg-red-100 transition-colors"
             >
               <Trash2 className="w-5 h-5" />
@@ -208,6 +228,66 @@ const InputView: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* 비밀번호 입력 모달 */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <div className={`${pendingAction === 'delete' ? 'bg-red-50' : 'bg-indigo-50'} p-2.5 rounded-xl`}>
+                  {pendingAction === 'delete' ? (
+                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                  ) : (
+                    <Lock className="w-6 h-6 text-indigo-600" />
+                  )}
+                </div>
+                <button 
+                  onClick={() => setShowPasswordModal(false)}
+                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-slate-400" />
+                </button>
+              </div>
+              
+              <h3 className="text-xl font-extrabold text-slate-800 mb-2">
+                {pendingAction === 'delete' ? '정말 삭제할까요?' : '비밀번호 확인'}
+              </h3>
+              <p className="text-slate-500 text-sm mb-6">
+                {pendingAction === 'delete' ? '삭제를 진행하려면 비밀번호를 입력하세요.' : '데이터를 저장하려면 비밀번호를 입력하세요.'}
+              </p>
+              
+              <input
+                autoFocus
+                type="password"
+                inputMode="numeric"
+                className={`w-full border-2 border-slate-100 bg-slate-50 rounded-2xl p-4 text-center text-2xl font-black tracking-[0.5em] outline-none transition-all mb-6 ${pendingAction === 'delete' ? 'focus:border-red-500' : 'focus:border-indigo-500'}`}
+                placeholder="****"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handlePasswordConfirm();
+                }}
+              />
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPasswordModal(false)}
+                  className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handlePasswordConfirm}
+                  className={`flex-1 py-4 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-all ${pendingAction === 'delete' ? 'bg-red-600 shadow-red-100 hover:bg-red-700' : 'bg-indigo-600 shadow-indigo-100 hover:bg-indigo-700'}`}
+                >
+                  확인
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
