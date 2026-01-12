@@ -1,6 +1,5 @@
 
 import React, { useState, useMemo } from 'react';
-// Fix: Use namespace import for react-router-dom
 import * as ReactRouterDOM from 'react-router-dom';
 import { Header } from '../components/Layout';
 import Flashcard from '../components/Flashcard';
@@ -37,12 +36,8 @@ const StudyView: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-slate-50">
         <h2 className="text-xl font-bold text-slate-800 mb-4">학습할 문장이 없습니다.</h2>
-        <button 
-          onClick={() => navigate('/')}
-          className="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold shadow-lg active:scale-95 transition-transform"
-        >
-          홈으로 돌아가기
-        </button>
+        {/* 상단 헤더에 홈 버튼이 있으므로 하단 버튼은 제거하고 텍스트만 유지하거나 안내만 합니다 */}
+        <p className="text-slate-500 text-sm">상단 홈 아이콘을 눌러 돌아가주세요.</p>
       </div>
     );
   }
