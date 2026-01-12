@@ -4,7 +4,7 @@ import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { useApp } from '../App';
 import { Header, EmptyState } from '../components/Layout';
-import { Edit2, PlayCircle, Star, Calendar, Play } from 'lucide-react';
+import { Edit2, PlayCircle, Star, Calendar, Play, ExternalLink } from 'lucide-react';
 import { Sentence } from '../types';
 
 const { useParams, useNavigate } = ReactRouterDOM;
@@ -74,28 +74,42 @@ const ListView: React.FC = () => {
     <div 
       key={s.id} 
       onClick={() => handleCardClick(s)}
-      className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-start gap-4 hover:border-blue-100 transition-colors cursor-pointer group/card"
+      className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-start gap-4 hover:border-indigo-100 transition-colors cursor-pointer group/card"
     >
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded tracking-tight">
+          <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded tracking-tight">
             {formatDateString(s.date)}
           </span>
           {s.bookmark && <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />}
         </div>
-        <p className="text-gray-900 font-semibold mb-1 leading-tight group-hover/card:text-blue-600 transition-colors">{s.sentence}</p>
+        <p className="text-gray-900 font-semibold mb-1 leading-tight group-hover/card:text-indigo-600 transition-colors">{s.sentence}</p>
         <p className="text-gray-500 text-sm">{s.meaning}</p>
       </div>
       <div className="flex flex-col gap-2" onClick={e => e.stopPropagation()}>
+        {s.referenceUrl && (
+          <a 
+            href={s.referenceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            className="p-2 bg-indigo-50 rounded-full text-indigo-500 hover:bg-indigo-100 transition-colors flex items-center justify-center"
+            title="참고 링크 열기"
+          >
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        )}
         <button 
           onClick={() => navigate(`/edit/${s.id}`)}
-          className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+          className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 transition-colors"
+          title="수정"
         >
           <Edit2 className="w-4 h-4" />
         </button>
         <button 
           onClick={() => updateBookmarkOptimistically(s.id)}
           className={`p-2 rounded-full transition-colors ${s.bookmark ? 'text-yellow-500 bg-yellow-50' : 'text-gray-300 bg-gray-50'}`}
+          title="북마크"
         >
           <Star className="w-4 h-4 fill-current" />
         </button>
@@ -111,7 +125,7 @@ const ListView: React.FC = () => {
         <button
           onClick={() => handleStartStudy()}
           disabled={filteredSentences.length === 0}
-          className="w-full bg-blue-600 text-white py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-blue-100 disabled:opacity-50 active:scale-95 transition-all"
+          className="w-full bg-indigo-600 text-white py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-indigo-100 disabled:opacity-50 active:scale-95 transition-all"
         >
           <PlayCircle className="w-5 h-5" />
           전체 리스트 학습하기
@@ -130,18 +144,18 @@ const ListView: React.FC = () => {
                     className="flex items-center gap-3 px-1 group cursor-pointer"
                     onClick={() => handleStartStudy(groupedByDate[date], `${date} 학습`)}
                   >
-                    <div className="bg-slate-800 p-1.5 rounded-lg shadow-sm group-hover:bg-blue-600 transition-colors">
+                    <div className="bg-slate-800 p-1.5 rounded-lg shadow-sm group-hover:bg-indigo-600 transition-colors">
                       <Calendar className="w-3.5 h-3.5 text-white" />
                     </div>
                     <div className="flex flex-col">
-                      <h3 className="text-base font-black text-slate-800 tracking-tight leading-none mb-1 group-hover:text-blue-600 transition-colors">{date}</h3>
+                      <h3 className="text-base font-black text-slate-800 tracking-tight leading-none mb-1 group-hover:text-indigo-600 transition-colors">{date}</h3>
                       <span className="text-[10px] font-bold text-slate-400">
                         {groupedByDate[date].length} 문장
                       </span>
                     </div>
                     <div className="h-[1px] flex-1 bg-gradient-to-r from-slate-200 to-transparent"></div>
                     <button
-                      className="flex items-center gap-1 bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-blue-600 hover:text-white transition-all active:scale-95"
+                      className="flex items-center gap-1 bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-indigo-600 hover:text-white transition-all active:scale-95"
                     >
                       <Play className="w-3 h-3 fill-current" />
                       학습
