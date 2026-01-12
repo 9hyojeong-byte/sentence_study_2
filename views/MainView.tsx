@@ -76,7 +76,7 @@ const MainView: React.FC = () => {
 
   return (
     <div className="pb-24 min-h-screen bg-slate-50">
-      <Header title="문장 저장고" showBack={false} />
+      <Header title="영어회화 복습하기🦜 " showBack={false} />
       
       {state.loading && <LoadingOverlay />}
 
