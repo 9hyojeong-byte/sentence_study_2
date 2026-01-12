@@ -1,7 +1,10 @@
 
 import React from 'react';
 import { ArrowLeft, Home } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom
+import * as ReactRouterDOM from 'react-router-dom';
+
+const { useNavigate } = ReactRouterDOM;
 
 interface HeaderProps {
   title: string;

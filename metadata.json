@@ -1,5 +1,5 @@
 {
-  "name": "English Sentence Flashcards",
+  "name": "영어회화복습 ver2",
   "description": "A comprehensive English learning application featuring a calendar view, statistics dashboard, and interactive flashcards with Google Sheets as a backend.",
   "requestFramePermissions": []
 }

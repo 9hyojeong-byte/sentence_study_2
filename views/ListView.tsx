@@ -1,10 +1,13 @@
 
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom
+import * as ReactRouterDOM from 'react-router-dom';
 import { useApp } from '../App';
 import { Header, EmptyState } from '../components/Layout';
 import { Edit2, PlayCircle, Star, Calendar, Play } from 'lucide-react';
 import { Sentence } from '../types';
+
+const { useParams, useNavigate } = ReactRouterDOM;
 
 const ListView: React.FC = () => {
   const { type, value } = useParams<{ type: string; value: string }>();

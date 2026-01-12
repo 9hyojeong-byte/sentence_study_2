@@ -1,8 +1,6 @@
 
-const CACHE_NAME = 'study-buddy-v3';
-// './'와 'index.html'을 모두 캐싱하여 어떤 경로로 진입해도 대응 가능하게 합니다.
+const CACHE_NAME = 'study-buddy-v4';
 const ASSETS_TO_CACHE = [
-  './',
   'index.html',
   'manifest.json',
   'https://cdn.tailwindcss.com',
@@ -34,17 +32,16 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // 탐색(Navigation) 요청 처리: 오프라인이거나 경로를 못 찾을 때 index.html 반환
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => {
-        return caches.match('index.html') || caches.match('./');
+        // 네트워크 실패 시 캐시된 index.html을 반환하여 404 방지
+        return caches.match('index.html');
       })
     );
     return;
   }
 
-  // 나머지 리소스 요청
   event.respondWith(
     caches.match(event.request).then(response => {
       return response || fetch(event.request);

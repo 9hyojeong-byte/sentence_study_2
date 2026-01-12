@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+// Fix: Use namespace import to resolve missing named export errors in specific environments
+import * as ReactRouterDOM from 'react-router-dom';
 import { AppState } from './types';
 import { apiService } from './services/apiService';
 import { AlertCircle, RefreshCw } from 'lucide-react';
@@ -9,6 +10,9 @@ import MainView from './views/MainView';
 import ListView from './views/ListView';
 import InputView from './views/InputView';
 import StudyView from './views/StudyView';
+
+// Fix: Destructure from the namespace to ensure availability
+const { HashRouter, Routes, Route } = ReactRouterDOM;
 
 interface AppContextType {
   state: AppState;

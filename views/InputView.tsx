@@ -1,17 +1,23 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom
+import * as ReactRouterDOM from 'react-router-dom';
 import { useApp } from '../App';
 import { Header, LoadingOverlay } from '../components/Layout';
 import { apiService } from '../services/apiService';
-import { Trash2, Save } from 'lucide-react';
+import { Trash2, Save, Sparkles } from 'lucide-react';
 import { Sentence } from '../types';
+// Import Gemini API
+import { GoogleGenAI } from "@google/genai";
+
+const { useParams, useNavigate } = ReactRouterDOM;
 
 const InputView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { state, refreshData } = useApp();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const getTodayLocal = () => {
     const now = new Date();
@@ -41,6 +47,37 @@ const InputView: React.FC = () => {
       }
     }
   }, [id, state.sentences]);
+
+  // Fix: Add Gemini AI recommendation feature
+  const handleAIGenerate = async () => {
+    setIsGeneratingAI(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: '일상생활에서 자주 쓰이는 유용한 영어 학습용 문장 한 개를 골라줘. 문장은 English, 의미는 Korean으로 작성해줘. JSON 형식으로만 응답해줘: { "sentence": "...", "meaning": "...", "hint": "..." }',
+        config: { 
+          responseMimeType: "application/json"
+        }
+      });
+      
+      const text = response.text;
+      if (text) {
+        const data = JSON.parse(text.trim());
+        setFormData(prev => ({
+          ...prev,
+          sentence: data.sentence || '',
+          meaning: data.meaning || '',
+          hint: data.hint || ''
+        }));
+      }
+    } catch (err) {
+      console.error("AI Generation Error:", err);
+      alert("AI 추천 문장을 가져오는데 실패했습니다.");
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,11 +118,23 @@ const InputView: React.FC = () => {
     <div className="pb-10 min-h-screen">
       <Header title={id ? "문장 수정" : "새 문장 입력"} />
       
-      {isSubmitting && <LoadingOverlay />}
+      {(isSubmitting || isGeneratingAI) && <LoadingOverlay />}
 
       <form onSubmit={handleSubmit} className="px-6 py-8 space-y-6">
         <div className="space-y-2">
-          <label className="text-sm font-bold text-gray-700">영어 문장</label>
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-bold text-gray-700">영어 문장</label>
+            {!id && (
+              <button
+                type="button"
+                onClick={handleAIGenerate}
+                className="flex items-center gap-1.5 text-[11px] font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors active:scale-95"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                AI 추천 문장
+              </button>
+            )}
+          </div>
           <textarea
             required
             className="w-full border border-gray-200 rounded-xl p-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[120px] outline-none transition-all"

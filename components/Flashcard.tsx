@@ -10,7 +10,7 @@ interface FlashcardProps {
   onToggleBookmark: () => void;
 }
 
-const Flashcard: React.FC<FlashcardProps> = ({ sentence, isFlipped, onFlip }) => {
+const Flashcard: React.FC<FlashcardProps> = ({ sentence, isFlipped, onFlip, onToggleBookmark }) => {
   return (
     <div className="w-full aspect-[3/4] perspective-1000 cursor-pointer" onClick={onFlip}>
       <div className={`relative w-full h-full duration-500 preserve-3d transition-transform ${isFlipped ? 'rotate-y-180' : ''}`}>

@@ -2,10 +2,13 @@
 import React, { useState } from 'react';
 import Calendar from 'react-calendar';
 import { Plus, Shuffle, CalendarDays, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom
+import * as ReactRouterDOM from 'react-router-dom';
 import { useApp } from '../App';
 import { Header, LoadingOverlay } from '../components/Layout';
 import StatsDashboard from '../components/StatsDashboard';
+
+const { useNavigate } = ReactRouterDOM;
 
 const MainView: React.FC = () => {
   const { state, setLastViewedDate } = useApp();

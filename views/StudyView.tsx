@@ -1,18 +1,33 @@
 
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+// Fix: Use namespace import for react-router-dom
+import * as ReactRouterDOM from 'react-router-dom';
 import { Header } from '../components/Layout';
 import Flashcard from '../components/Flashcard';
-import { ChevronLeft, ChevronRight, Star, Home } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { useApp } from '../App';
 import { Sentence } from '../types';
+
+const { useLocation, useNavigate } = ReactRouterDOM;
 
 const StudyView: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { updateBookmarkOptimistically } = useApp();
+  const { state, updateBookmarkOptimistically } = useApp();
   
-  const studyList: Sentence[] = (location.state as any)?.sentences || [];
+  // 내비게이션으로 넘어온 초기 문장 리스트의 ID들만 추출
+  const initialSentenceIds: string[] = useMemo(() => {
+    const sentences = (location.state as any)?.sentences || [];
+    return sentences.map((s: Sentence) => s.id);
+  }, [location.state]);
+
+  // 전역 상태(state.sentences)에서 해당 ID를 가진 문장들을 찾아 실시간 데이터 구성
+  const studyList = useMemo(() => {
+    return initialSentenceIds
+      .map(id => state.sentences.find(s => s.id === id))
+      .filter((s): s is Sentence => !!s);
+  }, [initialSentenceIds, state.sentences]);
+
   const title: string = (location.state as any)?.title || '스터디';
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -50,7 +65,8 @@ const StudyView: React.FC = () => {
 
   const handleFlip = () => setIsFlipped(!isFlipped);
 
-  const toggleBookmark = () => {
+  const toggleBookmark = (e: React.MouseEvent) => {
+    e.stopPropagation();
     updateBookmarkOptimistically(currentSentence.id);
   };
 
@@ -58,12 +74,12 @@ const StudyView: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Header title={`${title} (${currentIndex + 1}/${studyList.length})`} />
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-32">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-10">
         <Flashcard 
           sentence={currentSentence} 
           isFlipped={isFlipped}
           onFlip={handleFlip}
-          onToggleBookmark={toggleBookmark}
+          onToggleBookmark={() => updateBookmarkOptimistically(currentSentence.id)}
         />
 
         <div className="mt-10 flex items-center justify-between w-full max-w-[280px]">
@@ -94,16 +110,6 @@ const StudyView: React.FC = () => {
             <ChevronRight className="w-8 h-8" />
           </button>
         </div>
-      </div>
-
-      <div className="p-6 fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/80 backdrop-blur-md border-t border-slate-100">
-        <button
-          onClick={() => navigate('/')}
-          className="w-full bg-slate-900 text-white py-4 rounded-2xl flex items-center justify-center gap-3 font-bold active:scale-[0.98] transition-all shadow-lg"
-        >
-          <Home className="w-5 h-5" />
-          홈 화면으로 돌아가기
-        </button>
       </div>
     </div>
   );

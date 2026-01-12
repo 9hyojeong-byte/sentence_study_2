@@ -1,8 +1,11 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+// Fix: Use namespace import for react-router-dom
+import * as ReactRouterDOM from 'react-router-dom';
 import { BookOpen, Star, Calendar } from 'lucide-react';
 import { Sentence } from '../types';
+
+const { useNavigate } = ReactRouterDOM;
 
 interface StatsDashboardProps {
   sentences: Sentence[];
