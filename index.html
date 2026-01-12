@@ -31,34 +31,87 @@
       transition: all 0.2s;
     }
     .react-calendar__tile {
-      padding: 0.75rem 0.5rem !important;
+      padding: 0.5rem !important;
       background: none;
       text-align: center;
       line-height: 1;
       font-size: 0.95rem;
-      font-weight: 500;
+      font-weight: 600;
       color: #334155;
-      border-radius: 0.75rem;
+      border-radius: 0.75rem !important; /* 기본 타일 형태: 둥근 사각형 */
       aspect-ratio: 1 / 1;
-      display: flex;
+      display: flex !important;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       transition: all 0.2s;
       position: relative;
+      border: none !important;
     }
+    
+    /* 선택된 날(Active) 스타일: 연보라색 둥근 정사각형 */
     .react-calendar__tile--active {
-      background: #4f46e5 !important;
+      background-color: #eef2ff !important; /* Indigo 50 */
+      color: #4f46e5 !important;
+    }
+
+    /* 오늘(Now) 스타일: 배경 없이 텍스트만 강조 (다른 날이 선택되었을 때) */
+    .react-calendar__tile--now {
+      background-color: transparent !important;
+      color: #4f46e5 !important;
+      font-weight: 900 !important;
+    }
+    
+    /* 오늘이면서 선택된 경우: 선택 스타일(배경) 우선 적용 */
+    .react-calendar__tile--now.react-calendar__tile--active {
+      background-color: #eef2ff !important;
+    }
+
+    /* 호버 스타일 */
+    .react-calendar__tile:enabled:hover,
+    .react-calendar__tile:enabled:focus {
+      background-color: #f8fafc !important;
+    }
+    
+    /* 당구공(Billiard Ball) 스타일: 학습 기록이 있는 날 (선택 배경보다 위에 위치) */
+    .has-sentences-tile abbr {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      width: 32px !important;
+      height: 32px !important;
+      min-width: 32px !important;
+      min-height: 32px !important;
+      aspect-ratio: 1 / 1 !important;
+      background-color: #10b981 !important; /* Emerald 500 */
+      color: white !important;
+      border-radius: 50% !important; /* 완전한 원형 */
+      margin: 0 auto;
+      box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);
+      text-decoration: none !important;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10; /* 선택 배경보다 앞으로 */
+    }
+
+    /* 학습 기록이 있는 날이 선택되었을 때도 당구공 색상 유지 */
+    .react-calendar__tile--active.has-sentences-tile abbr {
+      background-color: #10b981 !important;
       color: white !important;
     }
-    .dot-indicator {
-      height: 4px;
-      width: 4px;
-      background-color: #10b981;
-      border-radius: 50%;
-      margin-top: 4px;
-      flex-shrink: 0;
+
+    /* 기본 숫자(abbr) 정렬 및 크기 유지 */
+    .react-calendar__tile abbr {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        text-decoration: none;
+        position: relative;
+        z-index: 5;
     }
+
     .perspective-1000 {
       perspective: 1000px;
       -webkit-perspective: 1000px;

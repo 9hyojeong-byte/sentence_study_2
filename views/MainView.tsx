@@ -32,11 +32,12 @@ const MainView: React.FC = () => {
     });
   };
 
-  const tileContent = ({ date, view }: { date: Date, view: string }) => {
+  // 타일 자체에 클래스를 추가하여 당구공 효과 구현
+  const tileClassName = ({ date, view }: { date: Date, view: string }) => {
     if (view === 'month') {
       const daySentences = getDaySentences(date);
       if (daySentences.length > 0) {
-        return <div className="dot-indicator"></div>;
+        return 'has-sentences-tile';
       }
     }
     return null;
@@ -115,7 +116,7 @@ const MainView: React.FC = () => {
           value={value}
           activeStartDate={activeStartDate}
           onActiveStartDateChange={handleActiveStartDateChange}
-          tileContent={tileContent}
+          tileClassName={tileClassName}
           formatDay={formatDay}
           className="mb-8"
           next2Label={null}
