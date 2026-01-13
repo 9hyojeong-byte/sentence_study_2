@@ -75,6 +75,7 @@ const App: React.FC = () => {
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mb-4"></div>
         <p className="text-slate-500 font-bold animate-pulse">데이터 로드 중...</p>
+        <p className="text-slate-500 font-bold animate-pulse">구글시트에서 불러오느라 조금 느려요^^;</p>
       </div>
     );
   }
