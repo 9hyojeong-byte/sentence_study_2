@@ -5,7 +5,7 @@ import { Sentence } from '../types';
  * [주의] GAS 배포 시 발급받은 URL을 여기에 정확히 입력해야 합니다.
  * URL 끝이 반드시 /exec 로 끝나야 합니다.
  */
-const API_URL = "https://script.google.com/macros/s/AKfycbxJCM8_aH6tY2YwcG_Yzc8xKdr34zoH7xUbtAV953Oi1uUDYn1zMdvXo5KPMgE_e7f3/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyxyp7Sr2z6wmPWbpYd6kLrqjyIHke_fqB2ZjZV7rLmbX8MJU9NKVch3TtZbeaW45dt/exec";
 
 export const apiService = {
   async fetchSentences(): Promise<Sentence[]> {

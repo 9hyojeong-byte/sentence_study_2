@@ -77,7 +77,8 @@ const MainView: React.FC = () => {
 
   return (
     <div className="pb-24 min-h-screen bg-slate-50">
-      <Header title="영어회화 복습하기🦜 " showBack={false} />
+      {/* 홈 화면이므로 뒤로가기와 홈 버튼 모두 숨김 */}
+      <Header title="영어회화 복습하기🦜 " showBack={false} showHome={false} />
       
       {state.loading && <LoadingOverlay />}
 
