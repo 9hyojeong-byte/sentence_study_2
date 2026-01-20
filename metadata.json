@@ -1,5 +1,5 @@
 {
-  "name": "영어회화복습앱_음성인식추가",
+  "name": "영어회화복습앱_ver2",
   "description": "A comprehensive English learning application featuring a calendar view, statistics dashboard, and interactive flashcards with Google Sheets as a backend.",
   "requestFramePermissions": [
     "microphone"

@@ -10,15 +10,16 @@ interface FlashcardProps {
   onToggleBookmark: () => void;
 }
 
-const Flashcard: React.FC = () => {
-  // 실제 구현은 StudyView에서 Props를 받아 사용하므로 인터페이스에 맞게 작성
-};
-
-const FlashcardComponent: React.FC<FlashcardProps> = ({ sentence, isFlipped, onFlip, onToggleBookmark }) => {
+/**
+ * 플래시카드 컴포넌트
+ * 앞면은 의미(한국어), 뒷면은 문장(영어)을 표시합니다.
+ */
+const Flashcard: React.FC<FlashcardProps> = ({ sentence, isFlipped, onFlip, onToggleBookmark }) => {
   return (
     <div className="w-full aspect-square perspective-1000 cursor-pointer" onClick={onFlip}>
       <div className={`relative w-full h-full duration-500 preserve-3d transition-transform ${isFlipped ? 'rotate-y-180' : ''}`}>
         
+        {/* 앞면: 의미 (Korean) */}
         <div className="absolute inset-0 backface-hidden bg-white border-2 border-indigo-50 rounded-3xl shadow-xl flex flex-col items-center justify-center p-6 text-center overflow-hidden">
           <div className="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-3 py-1 rounded-full mb-4 tracking-widest uppercase">
             MEANING
@@ -43,6 +44,7 @@ const FlashcardComponent: React.FC<FlashcardProps> = ({ sentence, isFlipped, onF
           </div>
         </div>
 
+        {/* 뒷면: 문장 (English) */}
         <div className="absolute inset-0 backface-hidden rotate-y-180 bg-indigo-600 border-2 border-indigo-700 rounded-3xl shadow-xl flex flex-col items-center justify-center p-6 text-center text-white">
           <div className="bg-white/10 text-white/80 text-[10px] font-bold px-3 py-1 rounded-full mb-4 tracking-widest uppercase">
             ENGLISH
@@ -75,4 +77,4 @@ const FlashcardComponent: React.FC<FlashcardProps> = ({ sentence, isFlipped, onF
   );
 };
 
-export default FlashcardComponent;
+export default Flashcard;
