@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Header } from '../components/Layout';
 import Flashcard from '../components/Flashcard';
@@ -14,6 +14,12 @@ const StudyView: React.FC = () => {
   const navigate = useNavigate();
   const { state, updateBookmarkOptimistically } = useApp();
   
+  // 터치 위치 기록을 위한 ref
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  // 스와이프 판정을 위한 최소 거리 (픽셀)
+  const minSwipeDistance = 50;
+
   // 내비게이션으로 넘어온 초기 문장 리스트의 ID들만 추출
   const initialSentenceIds: string[] = useMemo(() => {
     const sentences = (location.state as any)?.sentences || [];
@@ -36,7 +42,6 @@ const StudyView: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center bg-slate-50">
         <h2 className="text-xl font-bold text-slate-800 mb-4">학습할 문장이 없습니다.</h2>
-        {/* 상단 헤더에 홈 버튼이 있으므로 하단 버튼은 제거하고 텍스트만 유지하거나 안내만 합니다 */}
         <p className="text-slate-500 text-sm">상단 홈 아이콘을 눌러 돌아가주세요.</p>
       </div>
     );
@@ -65,17 +70,48 @@ const StudyView: React.FC = () => {
     updateBookmarkOptimistically(currentSentence.id);
   };
 
+  // 스와이프 핸들러
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      handleNext();
+    } else if (isRightSwipe) {
+      handlePrev();
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-slate-50 select-none">
       <Header title={`${title} (${currentIndex + 1}/${studyList.length})`} />
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-10">
-        <Flashcard 
-          sentence={currentSentence} 
-          isFlipped={isFlipped}
-          onFlip={handleFlip}
-          onToggleBookmark={() => updateBookmarkOptimistically(currentSentence.id)}
-        />
+      <div 
+        className="flex-1 flex flex-col items-center justify-center px-6 py-10"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <div className="w-full max-w-sm">
+          <Flashcard 
+            sentence={currentSentence} 
+            isFlipped={isFlipped}
+            onFlip={handleFlip}
+            onToggleBookmark={() => updateBookmarkOptimistically(currentSentence.id)}
+          />
+        </div>
 
         <div className="mt-10 flex items-center justify-between w-full max-w-[280px]">
           <button
@@ -105,6 +141,10 @@ const StudyView: React.FC = () => {
             <ChevronRight className="w-8 h-8" />
           </button>
         </div>
+        
+        <p className="mt-6 text-[11px] font-bold text-slate-300 uppercase tracking-widest animate-pulse">
+          Swipe left or right to navigate
+        </p>
       </div>
     </div>
   );
