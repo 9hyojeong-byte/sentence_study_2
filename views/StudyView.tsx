@@ -39,10 +39,11 @@ const StudyView: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recognizedText, setRecognizedText] = useState('');
   const [accuracy, setAccuracy] = useState<number | null>(null);
-  const [showResult, setShowResult] = useState(false); // 결과 표시 여부
+  const [showResult, setShowResult] = useState(false);
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const transcriptBufferRef = useRef<string>(''); // 실시간 누적용 (UI 노출 안함)
+  const transcriptBufferRef = useRef<string>(''); 
+  const isActiveSessionRef = useRef<boolean>(false); // 10초 세션 활성 여부 추적
 
   const initialSentenceIds: string[] = useMemo(() => {
     const sentences = (location.state as any)?.sentences || [];
@@ -64,58 +65,68 @@ const StudyView: React.FC = () => {
   const startSpeechRecognition = () => {
     if (recognitionRef.current) {
       try {
-        transcriptBufferRef.current = ''; // 버퍼 초기화
+        isActiveSessionRef.current = true;
         recognitionRef.current.start();
         setIsRecording(true);
         setShowResult(false);
       } catch (e) {
-        console.warn("Recognition already started or error:", e);
+        // 이미 실행 중인 경우 무시
       }
     }
   };
 
   // 음성 인식 중지 함수
   const stopSpeechRecognition = () => {
+    isActiveSessionRef.current = false;
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        // 이미 중지된 경우 무시
+      }
       setIsRecording(false);
     }
   };
 
-  // 현재 문장이 바뀌면 결과 초기화 및 자동 녹음 시작
-  useEffect(() => {
-  setRecognizedText('');
-  setAccuracy(null);
-  setShowResult(false);
-  setIsFlipped(false);
-  transcriptBufferRef.current = '';
-  
-  // 1. 0.5초 뒤에 녹음 시작
-  const startTimer = setTimeout(() => {
-    startSpeechRecognition();
-  }, 500);
-
-  // 2. 10초(10500ms) 뒤에 자동으로 제출(중지)되도록 타이머 추가
-  const stopTimer = setTimeout(() => {
-    if (isRecording) {
-      handleSubmit(); // 10초 지나면 자동으로 제출 처리
-    }
-  }, 10500); // 시작 대기시간 0.5초 + 유지시간 10초
-
-  return () => {
-    clearTimeout(startTimer);
-    clearTimeout(stopTimer);
+  // 제출 처리 함수
+  const handleSubmit = () => {
     stopSpeechRecognition();
+    calculateSimilarity(transcriptBufferRef.current, studyList[currentIndex].sentence);
   };
-}, [currentIndex]);
 
-  // Speech Recognition 설정 및 초기화
+  useEffect(() => {
+    setRecognizedText('');
+    setAccuracy(null);
+    setShowResult(false);
+    setIsFlipped(false);
+    transcriptBufferRef.current = '';
+    
+    // 0.5초 뒤에 녹음 시작
+    const startTimer = setTimeout(() => {
+      startSpeechRecognition();
+    }, 500);
+
+    // 10.5초 뒤에 자동 제출
+    const stopTimer = setTimeout(() => {
+      if (isActiveSessionRef.current) {
+        handleSubmit();
+      }
+    }, 10500);
+
+    return () => {
+      clearTimeout(startTimer);
+      clearTimeout(stopTimer);
+      stopSpeechRecognition();
+    };
+  }, [currentIndex]);
+
+  // Speech Recognition 초기화
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.lang = 'en-US';
-      recognition.interimResults = false; // 실시간 결과 분석 안함 (성능 및 정확도 중심)
+      recognition.interimResults = false;
       recognition.continuous = true;
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -125,19 +136,26 @@ const StudyView: React.FC = () => {
             finalTranscript += event.results[i][0].transcript;
           }
         }
-        // UI에는 업데이트하지 않고 버퍼에만 저장
         transcriptBufferRef.current += (transcriptBufferRef.current ? ' ' : '') + finalTranscript;
       };
 
       recognition.onerror = (event: any) => {
         if (event.error !== 'no-speech') {
-          console.error("Speech recognition error", event.error);
-          setIsRecording(false);
+          console.error("Speech recognition error:", event.error);
         }
       };
 
       recognition.onend = () => {
-        setIsRecording(false);
+        // 중요: 10초 세션이 아직 활성 상태인데 브라우저가 연결을 끊었다면 재시작
+        if (isActiveSessionRef.current) {
+          try {
+            recognition.start();
+          } catch (e) {
+            // 재시작 시도 중 에러 무시
+          }
+        } else {
+          setIsRecording(false);
+        }
       };
 
       recognitionRef.current = recognition;
@@ -157,31 +175,27 @@ const StudyView: React.FC = () => {
 
   const calculateSimilarity = (spoken: string, target: string) => {
     const clean = (text: string) => text.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "").trim();
-    const spokenWords = clean(spoken).split(/\s+/);
-    const targetWords = clean(target).split(/\s+/);
+    const spokenWords = clean(spoken).split(/\s+/).filter(w => w.length > 0);
+    const targetWords = clean(target).split(/\s+/).filter(w => w.length > 0);
     
-    let matches = 0;
-    const targetWordCount = targetWords.length;
+    if (spokenWords.length === 0) {
+      setAccuracy(0);
+      setRecognizedText("");
+      setShowResult(true);
+      return;
+    }
 
+    let matches = 0;
     targetWords.forEach(word => {
       if (spokenWords.includes(word)) {
         matches++;
       }
     });
 
-    const score = Math.round((matches / targetWordCount) * 100);
+    const score = Math.round((matches / targetWords.length) * 100);
     setAccuracy(score);
     setRecognizedText(spoken);
     setShowResult(true);
-  };
-
-  // '제출' 버튼 클릭 핸들러
-  const handleSubmit = () => {
-    if (isRecording) {
-      stopSpeechRecognition();
-    }
-    // 제출 시점에 버퍼에 쌓인 텍스트로 분석 진행
-    calculateSimilarity(transcriptBufferRef.current, currentSentence.sentence);
   };
 
   const handleNext = () => {
@@ -233,7 +247,6 @@ const StudyView: React.FC = () => {
           />
         </div>
 
-        {/* 안내 및 결과 영역 */}
         <div className="w-full max-w-sm min-h-[110px] flex flex-col items-center justify-center bg-white rounded-3xl border border-slate-100 p-5 shadow-sm mb-6 transition-all relative overflow-hidden">
           {isRecording && (
             <div className="absolute top-3 right-4 flex items-center gap-1.5">
@@ -269,13 +282,12 @@ const StudyView: React.FC = () => {
               </div>
               <div className="text-center">
                 <p className="text-indigo-600 text-base font-black">지금 바로 말씀하세요</p>
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">문장을 다 읽고 제출을 눌러주세요</p>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">최대 10초간 인식됩니다</p>
               </div>
             </div>
           )}
         </div>
 
-        {/* 컨트롤 패널 */}
         <div className="flex flex-col items-center gap-6 w-full max-w-sm">
           <div className="flex items-center justify-between w-full max-w-[300px]">
             <button
@@ -286,7 +298,6 @@ const StudyView: React.FC = () => {
               <ChevronLeft className="w-6 h-6" />
             </button>
 
-            {/* 제출 / 다시시작 버튼 */}
             <div className="relative">
               {isRecording && (
                 <div className="absolute inset-0 bg-indigo-500 rounded-full animate-ping opacity-20 scale-125"></div>
@@ -350,7 +361,7 @@ const StudyView: React.FC = () => {
         </div>
 
         <p className="mt-8 text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] text-center px-8 leading-relaxed">
-          Swipe to turn page • Speak naturally • Press Submit to analyze
+          Swipe to turn page • Speak naturally • 10s Recording Window
         </p>
       </div>
     </div>
