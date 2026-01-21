@@ -84,21 +84,30 @@ const StudyView: React.FC = () => {
 
   // 현재 문장이 바뀌면 결과 초기화 및 자동 녹음 시작
   useEffect(() => {
-    setRecognizedText('');
-    setAccuracy(null);
-    setShowResult(false);
-    setIsFlipped(false);
-    transcriptBufferRef.current = '';
-    
-    const timer = setTimeout(() => {
-      startSpeechRecognition();
-    }, 500);
+  setRecognizedText('');
+  setAccuracy(null);
+  setShowResult(false);
+  setIsFlipped(false);
+  transcriptBufferRef.current = '';
+  
+  // 1. 0.5초 뒤에 녹음 시작
+  const startTimer = setTimeout(() => {
+    startSpeechRecognition();
+  }, 500);
 
-    return () => {
-      clearTimeout(timer);
-      stopSpeechRecognition();
-    };
-  }, [currentIndex]);
+  // 2. 10초(10500ms) 뒤에 자동으로 제출(중지)되도록 타이머 추가
+  const stopTimer = setTimeout(() => {
+    if (isRecording) {
+      handleSubmit(); // 10초 지나면 자동으로 제출 처리
+    }
+  }, 10500); // 시작 대기시간 0.5초 + 유지시간 10초
+
+  return () => {
+    clearTimeout(startTimer);
+    clearTimeout(stopTimer);
+    stopSpeechRecognition();
+  };
+}, [currentIndex]);
 
   // Speech Recognition 설정 및 초기화
   useEffect(() => {
