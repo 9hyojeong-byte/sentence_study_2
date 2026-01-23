@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Calendar from 'react-calendar';
-import { Plus, Shuffle, CalendarDays, Sparkles } from 'lucide-react';
+import { Plus, Shuffle, CalendarDays, Sparkles, ExternalLink } from 'lucide-react';
 // Fix: Use namespace import for react-router-dom
 import * as ReactRouterDOM from 'react-router-dom';
 import { useApp } from '../App';
@@ -75,8 +75,12 @@ const MainView: React.FC = () => {
     }
   };
 
+  const openExternalLink = () => {
+    window.open('https://koo-vibecoding-gal.vercel.app/', '_blank', 'noopener,noreferrer');
+  };
+
   return (
-    <div className="pb-24 min-h-screen bg-slate-50">
+    <div className="pb-32 min-h-screen bg-slate-50">
       {/* 홈 화면이므로 뒤로가기와 홈 버튼 모두 숨김 */}
       <Header title="영어회화 복습하기🦜 " showBack={false} showHome={false} />
       
@@ -127,6 +131,17 @@ const MainView: React.FC = () => {
 
       <div className="mt-2">
         <StatsDashboard sentences={state.sentences} />
+      </div>
+
+      {/* 다른 앱 더보기 버튼 */}
+      <div className="px-5 mt-4">
+        <button
+          onClick={openExternalLink}
+          className="w-full py-4 bg-slate-100/80 hover:bg-slate-200/80 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 group"
+        >
+          <span className="text-xs font-bold text-slate-400 group-hover:text-slate-500">다른 앱 더보기</span>
+          <ExternalLink className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-400" />
+        </button>
       </div>
 
       <button
