@@ -3,11 +3,42 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { Header } from '../components/Layout';
 import Flashcard from '../components/Flashcard';
-import { ChevronLeft, ChevronRight, Star, Check, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star, Check, RotateCcw, Mic } from 'lucide-react';
 import { useApp } from '../App';
 import { Sentence } from '../types';
+import { GoogleGenAI, Modality } from "@google/genai";
 
 const { useLocation, useNavigate } = ReactRouterDOM;
+
+// Audio Decoding Helpers
+function decodeBase64(base64: string) {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+async function decodeAudioData(
+  data: Uint8Array,
+  ctx: AudioContext,
+  sampleRate: number,
+  numChannels: number,
+): Promise<AudioBuffer> {
+  const dataInt16 = new Int16Array(data.buffer);
+  const frameCount = dataInt16.length / numChannels;
+  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+
+  for (let channel = 0; channel < numChannels; channel++) {
+    const channelData = buffer.getChannelData(channel);
+    for (let i = 0; i < frameCount; i++) {
+      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+    }
+  }
+  return buffer;
+}
 
 // Web Speech API 타입 정의
 interface SpeechRecognitionEvent extends Event {
@@ -40,10 +71,11 @@ const StudyView: React.FC = () => {
   const [recognizedText, setRecognizedText] = useState('');
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const transcriptBufferRef = useRef<string>(''); 
-  const isActiveSessionRef = useRef<boolean>(false); // 10초 세션 활성 여부 추적
+  const isActiveSessionRef = useRef<boolean>(false); 
 
   const initialSentenceIds: string[] = useMemo(() => {
     const sentences = (location.state as any)?.sentences || [];
@@ -66,11 +98,14 @@ const StudyView: React.FC = () => {
     if (recognitionRef.current) {
       try {
         isActiveSessionRef.current = true;
+        transcriptBufferRef.current = '';
+        setRecognizedText('');
+        setAccuracy(null);
+        setShowResult(false);
         recognitionRef.current.start();
         setIsRecording(true);
-        setShowResult(false);
       } catch (e) {
-        // 이미 실행 중인 경우 무시
+        console.warn("Recognition start failed or already running", e);
       }
     }
   };
@@ -82,7 +117,7 @@ const StudyView: React.FC = () => {
       try {
         recognitionRef.current.stop();
       } catch (e) {
-        // 이미 중지된 경우 무시
+        // ignore
       }
       setIsRecording(false);
     }
@@ -94,28 +129,62 @@ const StudyView: React.FC = () => {
     calculateSimilarity(transcriptBufferRef.current, studyList[currentIndex].sentence);
   };
 
+  // TTS 기능 (Gemini API)
+  const playTTS = async (text: string) => {
+    if (isSpeaking) return;
+    setIsSpeaking(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: [{ parts: [{ text: `Say naturally and clearly: ${text}` }] }],
+        config: {
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: 'Kore' }, // 'Kore' is a standard high-quality voice
+            },
+          },
+        },
+      });
+
+      const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (base64Audio) {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({sampleRate: 24000});
+        const decoded = decodeBase64(base64Audio);
+        const audioBuffer = await decodeAudioData(decoded, audioCtx, 24000, 1);
+        
+        const source = audioCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioCtx.destination);
+        source.onended = () => setIsSpeaking(false);
+        source.start();
+      } else {
+        setIsSpeaking(false);
+      }
+    } catch (err) {
+      console.error("TTS Error:", err);
+      setIsSpeaking(false);
+      // Fallback to browser TTS if Gemini fails
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.onend = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  // 문장 변경 시 초기화
   useEffect(() => {
     setRecognizedText('');
     setAccuracy(null);
     setShowResult(false);
     setIsFlipped(false);
     transcriptBufferRef.current = '';
+    isActiveSessionRef.current = false;
     
-    // 0.5초 뒤에 녹음 시작
-    const startTimer = setTimeout(() => {
-      startSpeechRecognition();
-    }, 500);
-
-    // 10.5초 뒤에 자동 제출
-    const stopTimer = setTimeout(() => {
-      if (isActiveSessionRef.current) {
-        handleSubmit();
-      }
-    }, 10500);
+    // 자동 녹음 타이머 제거됨. 사용자가 수동으로 시작해야 함.
 
     return () => {
-      clearTimeout(startTimer);
-      clearTimeout(stopTimer);
       stopSpeechRecognition();
     };
   }, [currentIndex]);
@@ -146,13 +215,11 @@ const StudyView: React.FC = () => {
       };
 
       recognition.onend = () => {
-        // 중요: 10초 세션이 아직 활성 상태인데 브라우저가 연결을 끊었다면 재시작
+        // 10초 세션 활성 중에 끊기면 재시작 (모바일 대응)
         if (isActiveSessionRef.current) {
           try {
             recognition.start();
-          } catch (e) {
-            // 재시작 시도 중 에러 무시
-          }
+          } catch (e) {}
         } else {
           setIsRecording(false);
         }
@@ -161,6 +228,19 @@ const StudyView: React.FC = () => {
       recognitionRef.current = recognition;
     }
   }, [currentIndex, studyList]);
+
+  // 자동 제출 타이머 (수동으로 시작했을 때만 작동하도록 변경 가능하나, 일단 수동 시작 후 10초 뒤 제출로 유지)
+  useEffect(() => {
+    let stopTimer: number;
+    if (isRecording) {
+      stopTimer = window.setTimeout(() => {
+        if (isActiveSessionRef.current) {
+          handleSubmit();
+        }
+      }, 10000);
+    }
+    return () => clearTimeout(stopTimer);
+  }, [isRecording]);
 
   if (studyList.length === 0) {
     return (
@@ -228,6 +308,19 @@ const StudyView: React.FC = () => {
     else if (distance < -minSwipeDistance) handlePrev();
   };
 
+  const handleMainAction = () => {
+    if (showResult) {
+      // 다시 시도
+      startSpeechRecognition();
+    } else if (isRecording) {
+      // 제출
+      handleSubmit();
+    } else {
+      // 녹음 시작
+      startSpeechRecognition();
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 select-none">
       <Header title={`${title} (${currentIndex + 1}/${studyList.length})`} />
@@ -244,6 +337,8 @@ const StudyView: React.FC = () => {
             isFlipped={isFlipped}
             onFlip={handleFlip}
             onToggleBookmark={() => updateBookmarkOptimistically(currentSentence.id)}
+            onSpeak={playTTS}
+            isSpeaking={isSpeaking}
           />
         </div>
 
@@ -281,8 +376,10 @@ const StudyView: React.FC = () => {
                 ))}
               </div>
               <div className="text-center">
-                <p className="text-indigo-600 text-base font-black">지금 바로 말씀하세요</p>
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">최대 10초간 인식됩니다</p>
+                <p className={`${isRecording ? 'text-indigo-600' : 'text-slate-400'} text-base font-black transition-colors`}>
+                  {isRecording ? '지금 바로 말씀하세요' : '버튼을 눌러 녹음을 시작하세요'}
+                </p>
+                {isRecording && <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-0.5">10초 후 자동 제출됩니다</p>}
               </div>
             </div>
           )}
@@ -292,7 +389,7 @@ const StudyView: React.FC = () => {
           <div className="flex items-center justify-between w-full max-w-[300px]">
             <button
               onClick={handlePrev}
-              disabled={currentIndex === 0}
+              disabled={currentIndex === 0 || isRecording}
               className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-400 disabled:opacity-20 active:scale-90 transition-all border border-slate-100"
             >
               <ChevronLeft className="w-6 h-6" />
@@ -303,22 +400,27 @@ const StudyView: React.FC = () => {
                 <div className="absolute inset-0 bg-indigo-500 rounded-full animate-ping opacity-20 scale-125"></div>
               )}
               <button
-                onClick={showResult ? () => { startSpeechRecognition(); } : handleSubmit}
+                onClick={handleMainAction}
                 className={`w-20 h-20 rounded-full shadow-xl flex flex-col items-center justify-center active:scale-95 transition-all relative z-10 border-4 border-white ${
                   showResult 
                     ? 'bg-slate-800 text-white' 
-                    : isRecording ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-400'
+                    : isRecording ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 border-indigo-50'
                 }`}
               >
-                {!showResult ? (
+                {showResult ? (
+                  <>
+                    <RotateCcw className="w-7 h-7 mb-0.5" />
+                    <span className="text-[8px] font-black uppercase tracking-tighter">Retry</span>
+                  </>
+                ) : isRecording ? (
                   <>
                     <Check className="w-8 h-8 mb-0.5" />
                     <span className="text-[8px] font-black uppercase tracking-tighter">Submit</span>
                   </>
                 ) : (
                   <>
-                    <RotateCcw className="w-7 h-7 mb-0.5" />
-                    <span className="text-[8px] font-black uppercase tracking-tighter">Retry</span>
+                    <Mic className="w-8 h-8 mb-0.5" />
+                    <span className="text-[8px] font-black uppercase tracking-tighter">Record</span>
                   </>
                 )}
               </button>
@@ -326,7 +428,7 @@ const StudyView: React.FC = () => {
 
             <button
               onClick={handleNext}
-              disabled={currentIndex === studyList.length - 1}
+              disabled={currentIndex === studyList.length - 1 || isRecording}
               className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-400 disabled:opacity-20 active:scale-90 transition-all border border-slate-100"
             >
               <ChevronRight className="w-6 h-6" />
@@ -350,7 +452,7 @@ const StudyView: React.FC = () => {
                 setRecognizedText('');
                 setAccuracy(null);
                 setShowResult(false);
-                startSpeechRecognition();
+                stopSpeechRecognition();
               }}
               className="p-3.5 bg-white rounded-2xl text-slate-400 border-2 border-slate-100 hover:text-indigo-500 hover:border-indigo-100 transition-all active:rotate-180 duration-500"
               title="Reset All"

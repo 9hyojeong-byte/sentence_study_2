@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ExternalLink, HelpCircle } from 'lucide-react';
+import { ExternalLink, HelpCircle, Volume2, Loader2 } from 'lucide-react';
 import { Sentence } from '../types';
 
 interface FlashcardProps {
@@ -8,13 +8,22 @@ interface FlashcardProps {
   isFlipped: boolean;
   onFlip: () => void;
   onToggleBookmark: () => void;
+  onSpeak?: (text: string) => void;
+  isSpeaking?: boolean;
 }
 
 /**
  * 플래시카드 컴포넌트
  * 앞면은 의미(한국어), 뒷면은 문장(영어)을 표시합니다.
  */
-const Flashcard: React.FC<FlashcardProps> = ({ sentence, isFlipped, onFlip, onToggleBookmark }) => {
+const Flashcard: React.FC<FlashcardProps> = ({ 
+  sentence, 
+  isFlipped, 
+  onFlip, 
+  onToggleBookmark, 
+  onSpeak,
+  isSpeaking = false
+}) => {
   return (
     <div className="w-full aspect-square perspective-1000 cursor-pointer" onClick={onFlip}>
       <div className={`relative w-full h-full duration-500 preserve-3d transition-transform ${isFlipped ? 'rotate-y-180' : ''}`}>
@@ -50,9 +59,26 @@ const Flashcard: React.FC<FlashcardProps> = ({ sentence, isFlipped, onFlip, onTo
             ENGLISH
           </div>
           
-          <h2 className="text-xl font-bold leading-relaxed mb-6 drop-shadow-sm">
-            {sentence.sentence}
-          </h2>
+          <div className="flex flex-col items-center gap-4 mb-6">
+            <h2 className="text-xl font-bold leading-relaxed drop-shadow-sm">
+              {sentence.sentence}
+            </h2>
+            
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onSpeak) onSpeak(sentence.sentence);
+              }}
+              disabled={isSpeaking}
+              className="p-3 bg-white/20 hover:bg-white/30 rounded-full transition-all border border-white/20 active:scale-90"
+            >
+              {isSpeaking ? (
+                <Loader2 className="w-6 h-6 animate-spin" />
+              ) : (
+                <Volume2 className="w-6 h-6" />
+              )}
+            </button>
+          </div>
 
           {sentence.referenceUrl && (
             <a 
