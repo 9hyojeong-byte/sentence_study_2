@@ -10,12 +10,14 @@ import { Sentence } from '../types';
 // Import Gemini API
 import { GoogleGenAI } from "@google/genai";
 
-const { useParams, useNavigate } = ReactRouterDOM;
+const { useParams, useNavigate, useLocation } = ReactRouterDOM;
 
 const InputView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { state, refreshData } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -33,12 +35,15 @@ const InputView: React.FC = () => {
     return `${year}-${month}-${day}`;
   };
 
+  // ListView 등에서 전달받은 기본 날짜 확인
+  const passedDefaultDate = (location.state as any)?.defaultDate;
+
   const [formData, setFormData] = useState<Partial<Sentence>>({
     sentence: '',
     meaning: '',
     hint: '',
     referenceUrl: '',
-    date: getTodayLocal(),
+    date: passedDefaultDate || getTodayLocal(),
     bookmark: false,
   });
 

@@ -4,7 +4,7 @@ import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { useApp } from '../App';
 import { Header, EmptyState } from '../components/Layout';
-import { Edit2, PlayCircle, Star, Calendar, Play, ExternalLink } from 'lucide-react';
+import { Edit2, PlayCircle, Star, Calendar, Play, ExternalLink, Plus } from 'lucide-react';
 import { Sentence } from '../types';
 
 const { useParams, useNavigate } = ReactRouterDOM;
@@ -118,7 +118,7 @@ const ListView: React.FC = () => {
   );
 
   return (
-    <div className="pb-10 min-h-screen">
+    <div className="pb-24 min-h-screen relative">
       <Header title={getTitle()} />
       
       <div className="px-4 pt-4 sticky top-[56px] bg-white/90 backdrop-blur-md z-20 pb-4 shadow-sm border-b border-gray-50">
@@ -174,6 +174,14 @@ const ListView: React.FC = () => {
           )
         )}
       </div>
+
+      {/* 새 문장 입력 플로팅 버튼 - 날짜별 목록일 경우 해당 날짜를 기본값으로 전달 */}
+      <button
+        onClick={() => navigate('/input', { state: { defaultDate: type === 'date' ? value : undefined } })}
+        className="fixed bottom-8 right-6 w-16 h-16 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-indigo-700 transition-all active:scale-90 z-40 border-4 border-white"
+      >
+        <Plus className="w-9 h-9" />
+      </button>
     </div>
   );
 };
