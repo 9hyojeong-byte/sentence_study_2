@@ -5,7 +5,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { useApp } from '../App';
 import { Header, LoadingOverlay } from '../components/Layout';
 import { apiService } from '../services/apiService';
-import { Trash2, Save, Sparkles, Lock, X, AlertTriangle } from 'lucide-react';
+import { Trash2, Save, Sparkles, Lock, X, AlertTriangle, Languages } from 'lucide-react';
 import { Sentence } from '../types';
 // Import Gemini API
 import { GoogleGenAI } from "@google/genai";
@@ -18,6 +18,7 @@ const InputView: React.FC = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   
   // 비밀번호 관련 상태
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -53,6 +54,7 @@ const InputView: React.FC = () => {
     }
   }, [id, state.sentences]);
 
+  // AI 추천 문장 생성
   const handleAIGenerate = async () => {
     setIsGeneratingAI(true);
     try {
@@ -80,6 +82,33 @@ const InputView: React.FC = () => {
       alert("AI 추천 문장을 가져오는데 실패했습니다.");
     } finally {
       setIsGeneratingAI(false);
+    }
+  };
+
+  // 영어 문장 자동 번역 기능
+  const handleTranslate = async () => {
+    if (!formData.sentence || formData.sentence.trim() === '') return;
+    
+    setIsTranslating(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `다음 영어 문장을 자연스러운 한국어로 번역해줘. 오직 번역된 결과만 텍스트로 반환해줘: "${formData.sentence}"`,
+      });
+      
+      const translatedText = response.text;
+      if (translatedText) {
+        setFormData(prev => ({
+          ...prev,
+          meaning: translatedText.trim()
+        }));
+      }
+    } catch (err) {
+      console.error("Translation Error:", err);
+      alert("번역에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsTranslating(false);
     }
   };
 
@@ -138,7 +167,7 @@ const InputView: React.FC = () => {
     <div className="pb-10 min-h-screen">
       <Header title={id ? "문장 수정" : "새 문장 입력"} />
       
-      {(isSubmitting || isGeneratingAI) && <LoadingOverlay />}
+      {(isSubmitting || isGeneratingAI || isTranslating) && <LoadingOverlay />}
 
       <form onSubmit={handleSubmitClick} className="px-6 py-8 space-y-6">
         <div className="space-y-2">
@@ -165,7 +194,18 @@ const InputView: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-bold text-gray-700">의미 (한국어)</label>
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-bold text-gray-700">의미 (한국어)</label>
+            <button
+              type="button"
+              onClick={handleTranslate}
+              disabled={!formData.sentence || isTranslating}
+              className="flex items-center gap-1.5 text-[11px] font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+            >
+              <Languages className={`w-3.5 h-3.5 ${isTranslating ? 'animate-spin' : ''}`} />
+              {isTranslating ? '번역 중...' : '자동 번역'}
+            </button>
+          </div>
           <input
             required
             type="text"
