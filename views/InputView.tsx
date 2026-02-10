@@ -90,23 +90,45 @@ const InputView: React.FC = () => {
     }
   };
 
-  // 영어 문장 자동 번역 기능
+  // 양방향 자동 번역 기능
   const handleTranslate = async () => {
-    if (!formData.sentence || formData.sentence.trim() === '') return;
+    const hasSentence = formData.sentence && formData.sentence.trim() !== '';
+    const hasMeaning = formData.meaning && formData.meaning.trim() !== '';
+
+    // 둘 다 비어있으면 중단
+    if (!hasSentence && !hasMeaning) return;
     
     setIsTranslating(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      let prompt = "";
+      let targetField: "sentence" | "meaning" = "meaning";
+
+      // 시나리오 결정
+      if (hasSentence && !hasMeaning) {
+        // 영어 -> 한국어
+        prompt = `다음 영어 문장을 자연스러운 한국어로 번역해줘. 오직 번역된 결과만 텍스트로 반환해줘: "${formData.sentence}"`;
+        targetField = "meaning";
+      } else if (!hasSentence && hasMeaning) {
+        // 한국어 -> 영어
+        prompt = `다음 한국어 문장을 자연스러운 영어 문장으로 번역해줘. 오직 번역된 결과만 텍스트로 반환해줘: "${formData.meaning}"`;
+        targetField = "sentence";
+      } else {
+        // 둘 다 있는 경우 기본적으로 영어를 한국어로 재번역 (업데이트)
+        prompt = `다음 영어 문장을 자연스러운 한국어로 번역해줘. 오직 번역된 결과만 텍스트로 반환해줘: "${formData.sentence}"`;
+        targetField = "meaning";
+      }
+
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `다음 영어 문장을 자연스러운 한국어로 번역해줘. 오직 번역된 결과만 텍스트로 반환해줘: "${formData.sentence}"`,
+        contents: prompt,
       });
       
       const translatedText = response.text;
       if (translatedText) {
         setFormData(prev => ({
           ...prev,
-          meaning: translatedText.trim()
+          [targetField]: translatedText.trim()
         }));
       }
     } catch (err) {
@@ -204,7 +226,7 @@ const InputView: React.FC = () => {
             <button
               type="button"
               onClick={handleTranslate}
-              disabled={!formData.sentence || isTranslating}
+              disabled={(!formData.sentence?.trim() && !formData.meaning?.trim()) || isTranslating}
               className="flex items-center gap-1.5 text-[11px] font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
             >
               <Languages className={`w-3.5 h-3.5 ${isTranslating ? 'animate-spin' : ''}`} />
