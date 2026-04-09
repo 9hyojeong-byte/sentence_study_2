@@ -4,7 +4,8 @@ import React from 'react';
 import * as ReactRouterDOM from 'react-router-dom';
 import { useApp } from '../App';
 import { Header, EmptyState } from '../components/Layout';
-import { Edit2, PlayCircle, Star, Calendar, Play, ExternalLink, Plus } from 'lucide-react';
+import AudioPlayerController from '../components/AudioPlayerController';
+import { Edit2, PlayCircle, Star, Calendar, Play, ExternalLink, Plus, Headphones } from 'lucide-react';
 import { Sentence } from '../types';
 
 const { useParams, useNavigate } = ReactRouterDOM;
@@ -13,6 +14,7 @@ const ListView: React.FC = () => {
   const { type, value } = useParams<{ type: string; value: string }>();
   const { state, updateBookmarkOptimistically } = useApp();
   const navigate = useNavigate();
+  const [showAudioPlayer, setShowAudioPlayer] = React.useState(false);
 
   // 날짜 문자열을 YYYY-MM-DD 형식으로 안전하게 변환하는 함수
   const formatDateString = (dateStr: string) => {
@@ -122,14 +124,28 @@ const ListView: React.FC = () => {
       <Header title={getTitle()} />
       
       <div className="px-4 pt-4 sticky top-[56px] bg-white/90 backdrop-blur-md z-20 pb-4 shadow-sm border-b border-gray-50">
-        <button
-          onClick={() => handleStartStudy()}
-          disabled={filteredSentences.length === 0}
-          className="w-full bg-indigo-600 text-white py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-indigo-100 disabled:opacity-50 active:scale-95 transition-all"
-        >
-          <PlayCircle className="w-5 h-5" />
-          전체 리스트 학습하기
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleStartStudy()}
+            disabled={filteredSentences.length === 0}
+            className="flex-[2] bg-indigo-600 text-white py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-indigo-100 disabled:opacity-50 active:scale-95 transition-all"
+          >
+            <PlayCircle className="w-5 h-5" />
+            전체 리스트 학습하기
+          </button>
+          <button
+            onClick={() => setShowAudioPlayer(!showAudioPlayer)}
+            disabled={filteredSentences.length === 0}
+            className={`flex-1 py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold transition-all active:scale-95 ${
+              showAudioPlayer 
+                ? 'bg-slate-800 text-white shadow-lg' 
+                : 'bg-white text-slate-600 border border-slate-200'
+            }`}
+          >
+            <Headphones className="w-5 h-5" />
+            {showAudioPlayer ? '닫기' : '연속 듣기'}
+          </button>
+        </div>
       </div>
 
       <div className="px-4 mt-6">
@@ -178,10 +194,12 @@ const ListView: React.FC = () => {
       {/* 새 문장 입력 플로팅 버튼 - 날짜별 목록일 경우 해당 날짜를 기본값으로 전달 */}
       <button
         onClick={() => navigate('/input', { state: { defaultDate: type === 'date' ? value : undefined } })}
-        className="fixed bottom-8 right-6 w-16 h-16 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-indigo-700 transition-all active:scale-90 z-40 border-4 border-white"
+        className={`fixed bottom-8 right-6 w-16 h-16 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center hover:bg-indigo-700 transition-all active:scale-90 z-40 border-4 border-white ${showAudioPlayer ? 'mb-24' : ''}`}
       >
         <Plus className="w-9 h-9" />
       </button>
+
+      {showAudioPlayer && <AudioPlayerController sentences={filteredSentences} />}
     </div>
   );
 };

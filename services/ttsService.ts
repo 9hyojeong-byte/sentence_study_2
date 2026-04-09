@@ -15,6 +15,7 @@ interface TTSCache {
 class TTSService {
   private db: Promise<IDBPDatabase>;
   private audioCtx: AudioContext | null = null;
+  private currentSource: AudioBufferSourceNode | null = null;
 
   constructor() {
     this.db = openDB(DB_NAME, DB_VERSION, {
@@ -31,6 +32,31 @@ class TTSService {
       this.audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
     }
     return this.audioCtx;
+  }
+
+  async stopAudio() {
+    if (this.currentSource) {
+      try {
+        this.currentSource.stop();
+      } catch (e) {
+        // Already stopped
+      }
+      this.currentSource = null;
+    }
+  }
+
+  async pauseAudio() {
+    const ctx = this.getAudioContext();
+    if (ctx.state === 'running') {
+      await ctx.suspend();
+    }
+  }
+
+  async resumeAudio() {
+    const ctx = this.getAudioContext();
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
   }
 
   async getCachedAudio(text: string): Promise<string | null> {
@@ -73,6 +99,12 @@ class TTSService {
   }
 
   async playAudio(text: string): Promise<void> {
+    await this.stopAudio();
+    const ctx = this.getAudioContext();
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+
     let base64Audio = await this.getCachedAudio(text);
     
     if (!base64Audio) {
@@ -83,16 +115,21 @@ class TTSService {
       console.log("Cache hit for:", text);
     }
 
-    const ctx = this.getAudioContext();
     const decoded = this.decodeBase64(base64Audio);
     const audioBuffer = await this.decodeAudioData(decoded, ctx, 24000, 1);
     
     const source = ctx.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(ctx.destination);
+    this.currentSource = source;
     
     return new Promise((resolve) => {
-      source.onended = () => resolve();
+      source.onended = () => {
+        if (this.currentSource === source) {
+          this.currentSource = null;
+        }
+        resolve();
+      };
       source.start();
     });
   }
