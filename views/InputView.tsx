@@ -5,6 +5,7 @@ import * as ReactRouterDOM from 'react-router-dom';
 import { useApp } from '../App';
 import { Header, LoadingOverlay } from '../components/Layout';
 import { apiService } from '../services/apiService';
+import { ttsService } from '../services/ttsService';
 import { Trash2, Save, Sparkles, Lock, X, AlertTriangle, Languages } from 'lucide-react';
 import { Sentence } from '../types';
 // Import Gemini API
@@ -21,6 +22,7 @@ const InputView: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isGeneratingTTS, setIsGeneratingTTS] = useState(false);
   
   // 비밀번호 관련 상태
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -173,7 +175,21 @@ const InputView: React.FC = () => {
     
     try {
       if (pendingAction === 'save') {
+        // 1. 데이터 저장
         await apiService.upsertSentence(formData);
+        
+        // 2. TTS 미리 생성 및 캐싱 (로컬 속도 개선)
+        if (formData.sentence) {
+          setIsGeneratingTTS(true);
+          try {
+            await ttsService.precache(formData.sentence);
+          } catch (ttsErr) {
+            console.warn("TTS Pre-caching failed, but data was saved:", ttsErr);
+          } finally {
+            setIsGeneratingTTS(false);
+          }
+        }
+
         await refreshData();
         navigate(-1);
       } else if (pendingAction === 'delete' && id) {
@@ -194,7 +210,11 @@ const InputView: React.FC = () => {
     <div className="pb-10 min-h-screen">
       <Header title={id ? "문장 수정" : "새 문장 입력"} />
       
-      {(isSubmitting || isGeneratingAI || isTranslating) && <LoadingOverlay />}
+      {(isSubmitting || isGeneratingAI || isTranslating || isGeneratingTTS) && (
+        <LoadingOverlay 
+          message={isGeneratingTTS ? "음성 데이터 생성 중..." : undefined} 
+        />
+      )}
 
       <form onSubmit={handleSubmitClick} className="px-6 py-8 space-y-6">
         <div className="space-y-2">

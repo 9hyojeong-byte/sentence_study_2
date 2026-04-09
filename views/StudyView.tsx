@@ -5,40 +5,10 @@ import { Header } from '../components/Layout';
 import Flashcard from '../components/Flashcard';
 import { ChevronLeft, ChevronRight, Star, Check, RotateCcw, Mic } from 'lucide-react';
 import { useApp } from '../App';
+import { ttsService } from '../services/ttsService';
 import { Sentence } from '../types';
-import { GoogleGenAI, Modality } from "@google/genai";
 
 const { useLocation, useNavigate } = ReactRouterDOM;
-
-// Audio Decoding Helpers
-function decodeBase64(base64: string) {
-  const binaryString = atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
-
-async function decodeAudioData(
-  data: Uint8Array,
-  ctx: AudioContext,
-  sampleRate: number,
-  numChannels: number,
-): Promise<AudioBuffer> {
-  const dataInt16 = new Int16Array(data.buffer);
-  const frameCount = dataInt16.length / numChannels;
-  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
-
-  for (let channel = 0; channel < numChannels; channel++) {
-    const channelData = buffer.getChannelData(channel);
-    for (let i = 0; i < frameCount; i++) {
-      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
-    }
-  }
-  return buffer;
-}
 
 // Web Speech API 타입 정의
 interface SpeechRecognitionEvent extends Event {
@@ -129,47 +99,21 @@ const StudyView: React.FC = () => {
     calculateSimilarity(transcriptBufferRef.current, studyList[currentIndex].sentence);
   };
 
-  // TTS 기능 (Gemini API)
+  // TTS 기능 (TTS Service with Caching)
   const playTTS = async (text: string) => {
     if (isSpeaking) return;
     setIsSpeaking(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-preview-tts",
-        contents: [{ parts: [{ text: `Say naturally and clearly: ${text}` }] }],
-        config: {
-          responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Kore' }, // 'Kore' is a standard high-quality voice
-            },
-          },
-        },
-      });
-
-      const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      if (base64Audio) {
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({sampleRate: 24000});
-        const decoded = decodeBase64(base64Audio);
-        const audioBuffer = await decodeAudioData(decoded, audioCtx, 24000, 1);
-        
-        const source = audioCtx.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioCtx.destination);
-        source.onended = () => setIsSpeaking(false);
-        source.start();
-      } else {
-        setIsSpeaking(false);
-      }
+      await ttsService.playAudio(text);
     } catch (err) {
       console.error("TTS Error:", err);
-      setIsSpeaking(false);
-      // Fallback to browser TTS if Gemini fails
+      // Fallback to browser TTS if Service fails
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
       utterance.onend = () => setIsSpeaking(false);
       window.speechSynthesis.speak(utterance);
+    } finally {
+      setIsSpeaking(false);
     }
   };
 

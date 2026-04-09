@@ -33,9 +33,10 @@ export const Header: React.FC<HeaderProps> = ({ title, showBack = true, showHome
   );
 };
 
-export const LoadingOverlay: React.FC = () => (
-  <div className="fixed inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-[100]">
+export const LoadingOverlay: React.FC<{ message?: string }> = ({ message }) => (
+  <div className="fixed inset-0 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center z-[100] gap-4">
     <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+    {message && <p className="text-blue-600 font-bold animate-pulse">{message}</p>}
   </div>
 );
 

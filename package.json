@@ -1,4 +1,3 @@
-
 {
   "name": "english-flashcard-app",
   "private": true,
@@ -7,15 +6,17 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@google/genai": "^1.35.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-router-dom": "^7.12.0",
+    "idb": "^8.0.3",
     "lucide-react": "^0.562.0",
-    "react-calendar": "^6.0.0"
+    "react": "^19.0.0",
+    "react-calendar": "^6.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.12.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.4",
